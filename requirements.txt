@@ -1,0 +1,26 @@
+# Wan 2.2 batch pipeline — RTX 5090 target (Blackwell sm_120, 32GB).
+# 5090 REQUIRES torch cu128 / CUDA 12.8+. torch 2.4.1/cu121 has no sm_120 kernels — do not downgrade.
+# Install with: pip install -r requirements.txt
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+torch==2.7.1
+torchvision==0.22.1
+# PINNED EXACT (was >=0.35.0 floor): diffusers 0.35.0 (2025-08-19) is the release that
+# added Wan 2.2 pipelines; 0.35.2 (2025-10-15) is the last 0.35.x patch and includes
+# "fix scale_shift_factor being on cpu for wan" — directly relevant to TI2V-5B.
+# Do NOT float to 0.36+/0.40.x without re-testing: later releases refactored pipelines
+# (Modular Diffusers in 0.37) and may change Wan call signatures.
+# Honesty note: validated here by dry-run only (no GPU in this env); GPU smoke test
+# (--limit 2) on the 5090 host is still required before the full matrix.
+diffusers==0.35.2
+transformers>=4.50.0
+accelerate>=0.34.0
+safetensors>=0.4.5
+huggingface_hub>=0.24.0
+pillow>=10.4.0
+imageio>=2.35.0
+imageio-ffmpeg>=0.5.1
+tqdm>=4.66.0
+pandas>=2.2.0
+tomli>=2.0.1; python_version < "3.11"
+ftfy>=6.0

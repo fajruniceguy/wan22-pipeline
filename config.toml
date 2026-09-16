@@ -1,0 +1,78 @@
+[project]
+name = "wan22-pipeline"
+version = "0.2.0"
+description = "Wan 2.2 batch T2V pipeline for affiliate hook-testing (Phase 1) — RTX 5090 32GB target"
+requires-python = ">=3.10"
+
+[profiles.eco]
+# High-volume iteration: 480p, 5s @ 24fps. Very safe on 5090 32GB. ~2-3 min/clip.
+width = 832
+height = 480
+num_frames = 121
+num_inference_steps = 30
+guidance_scale = 5.0
+fps = 24
+
+[profiles.standard]
+# Hero: 720p, 5s @ 24fps. TI2V-5B reference setting. Full-VRAM on 5090 32GB
+# (no tiling — disabled per diffusers#12529 crash; no offload default).
+# ~3-5 min/clip on 5090 full-VRAM.
+width = 1280
+height = 720
+num_frames = 121
+num_inference_steps = 40
+guidance_scale = 5.0
+fps = 24
+
+[profiles.long8s]
+# 8s variant, 480p only. 193 = 8*24+1. Safe on 32GB full-VRAM.
+width = 832
+height = 480
+num_frames = 193
+num_inference_steps = 30
+guidance_scale = 5.0
+fps = 24
+
+[profiles.long10s]
+# 10s variant, 480p only. Tightest on 32GB — run only after long8s passes.
+width = 832
+height = 480
+num_frames = 241
+num_inference_steps = 30
+guidance_scale = 5.0
+fps = 24
+
+[host]
+# Verified Vast.ai host 553680 (machine 148413) — 2026-09-06.
+# Jangan hapus: bukti environment untuk reproducibility thesis/runbook.
+gpu = "1x RTX 5090 32GB (Blackwell sm_120, 109.1 TFLOPS FP32, 1455.8 GB/s)"
+motherboard = "H12SSL-i (single-socket SP3, server board)"
+pcie = "PCIe 4.0 x16, measured 26.9 GB/s (bukan 5.0 — offload lebih lambat)"
+cpu = "AMD EPYC 7K62 48-Core Processor (alokasi 24vCPU/96 di panel)"
+ram_gb = 64
+ram_host_total_gb = 258
+disk = "SAMSUNG MZQLB3T8HALS-0003 (PM9A3 3.84TB NVMe, lapang)"
+# Implikasi: (1) VRAM 32GB tetap target utama; (2) full-VRAM default — offload
+# hanya fallback via --offload bila OOM (transfer PCIe4 ~26GB/s);
+# (3) CPU/RAM/disk server berlebih — aman utk ffmpeg + HF cache lokal.
+
+[tuning]
+# Host #553680 specific (H12SSL-i + PCIe 4.0 x16 @26.9GB/s + EPYC 7K62).
+# Full-VRAM is default: TI2V-5B bf16 (~10 GB weights + <8 GB transient)
+# fits 5090 32GB without tiling or offload. VAE tiling is DISABLED
+# (diffusers#12529 / Wan2.2#125 crash at avg_shortcut), attention slicing off.
+# PCIe4 makes offload block-swap ~2x slower than PCIe5 anyway — use --offload
+# only as OOM fallback (long10s edge case).
+# EPYC 7K62 (server, single-thread lemah, core banyak): set torch threads 24
+# (= vCPU alokasi) + ffmpeg threads 8-16 di generate.py/batch.py.
+torch_threads = 24
+ffmpeg_threads = 8
+# Legacy fallback keys (default full-VRAM = false). Prefer CLI --offload flag.
+offload_eco = false
+offload_standard = false
+offload_long = false
+
+[defaults]
+model_id = "Wan-AI/Wan2.2-TI2V-5B-Diffusers"
+negative_prompt = "blurry, low quality, distorted, watermark, text overlay, deformed hands, extra fingers, static slideshow"
+hourly_rate_usd = 0.40
