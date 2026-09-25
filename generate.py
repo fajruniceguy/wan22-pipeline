@@ -104,6 +104,11 @@ def generate_clip(
     )
     if image_path:
         img = Image.open(image_path).convert("RGB")
+        # I2V pipelines derive latent dims from the input image's aspect ratio,
+        # not just height/width kwargs — a mismatched aspect causes a tensor
+        # size mismatch at decode (e.g. 27280 vs 28520). Force exact profile dims.
+        if img.size != (int(width), int(height)):
+            img = img.resize((int(width), int(height)), Image.LANCZOS)
         kwargs["image"] = img
 
     # Drop Nones (some pipeline revisions reject negative_prompt=None explicitly).

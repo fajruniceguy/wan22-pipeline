@@ -17,8 +17,9 @@ fps = 24
 # Hero: 720p, 5s @ 24fps. TI2V-5B reference setting. Full-VRAM on 5090 32GB
 # (no tiling — disabled per diffusers#12529 crash; no offload default).
 # ~3-5 min/clip on 5090 full-VRAM.
+# height = 704, not 720: Wan2.2 requires both dims divisible by 32.
 width = 1280
-height = 720
+height = 704
 num_frames = 121
 num_inference_steps = 40
 guidance_scale = 5.0
