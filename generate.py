@@ -17,10 +17,10 @@ from PIL import Image
 
 
 def load_pipeline(model_id: str, offload: bool = False, use_tf32: bool = True,
-                  torch_threads: int = 24):
+                  torch_threads: int = 24, i2v: bool = False):
     """Lazy-import diffusers so --dry-run / CSV validation works without GPU deps."""
     import os
-    from diffusers import DiffusionPipeline
+    from diffusers import WanPipeline, WanImageToVideoPipeline
 
     # Host #553680 (EPYC 7K62, 24 vCPU alokasi): batasi thread CPU agar tidak
     # oversubscribe. EPYC server single-thread lemah — 24 thread pas alokasi,
@@ -41,7 +41,8 @@ def load_pipeline(model_id: str, offload: bool = False, use_tf32: bool = True,
             pass
 
     dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
-    pipe = DiffusionPipeline.from_pretrained(model_id, torch_dtype=dtype)
+    pipeline_cls = WanImageToVideoPipeline if i2v else WanPipeline
+    pipe = pipeline_cls.from_pretrained(model_id, torch_dtype=dtype)
     # VAE tiling stays OFF: AutoencoderKLWan.tiled_decode() crashes on Wan2.2
     # (diffusers#12529 / Wan-Video/Wan2.2#125 — "tensor a (2) vs b (4)" at
     # avg_shortcut because _decode() drops first_chunk). TI2V-5B full-VAE

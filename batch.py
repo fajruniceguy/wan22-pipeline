@@ -200,9 +200,10 @@ def main(argv=None) -> int:
         print(f"[batch] dry-run OK: {len(rows)} clips planned.")
         return 0
     from generate import generate_clip, load_pipeline
+    has_i2v = any(bool(str(r.get("image") or "").strip()) for r in rows)
     print("[batch] loading model (first run downloads ~12GB, cached after)...")
-    print(f"[batch] host-tuning: threads={torch_threads} ffmpeg={ffmpeg_threads} offload={offload}")
-    pipe = load_pipeline(model_id, offload=offload, torch_threads=torch_threads)
+    print(f"[batch] host-tuning: threads={torch_threads} ffmpeg={ffmpeg_threads} offload={offload} i2v={has_i2v}")
+    pipe = load_pipeline(model_id, offload=offload, torch_threads=torch_threads, i2v=has_i2v)
     ok = fail = 0
     total_sec = 0.0
     with open(manifest_path, "a", newline="", encoding="utf-8") as mf:
